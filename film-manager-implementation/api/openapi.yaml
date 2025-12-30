@@ -299,8 +299,6 @@ paths:
         description: Filter by invitation status (e.g. retrieve only pending invitations)
       responses:
         '200':
-      responses:
-        '200':
           description: Successful operation
           content:
             application/json:
