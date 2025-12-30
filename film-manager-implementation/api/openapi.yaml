@@ -290,6 +290,15 @@ paths:
         schema:
           type: integer
         description: The id of the requested page (if absent, the first page is returned)
+      - in: query
+        name: invitationStatus
+        required: false
+        schema:
+          type: string
+          enum: [pending, accepted, cancelled, expired]
+        description: Filter by invitation status (e.g. retrieve only pending invitations)
+      responses:
+        '200':
       responses:
         '200':
           description: Successful operation

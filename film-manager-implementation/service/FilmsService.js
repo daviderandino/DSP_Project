@@ -108,32 +108,50 @@ exports.getPublicFilmsTotal = function () {
 
 /**
  * Retrieve the public films that the logged-in user has been invited to review
- * The public films that the logged-in user has been invited to review are retrieved. A pagination mechanism is used to limit the size of messages.
- *
- * pageNo Integer The id of the requested page (if absent, the first page is returned) (optional)
- * returns Films
+ * MODIFICATO: Aggiunto parametro filterStatus e logica SQL dinamica
  **/
-exports.getInvitedFilms = function (userId, pageNo) {
+exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
   return new Promise((resolve, reject) => {
-    // MODIFIED: Exclude expired invitations if they are still 'pending'.
-    // Logic: Show if accepted OR (pending AND not expired).
+    
+    // Costruiamo la parte base della query che esclude sempre gli scaduti per l'utente invitato
+    var baseLogic = `(r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))`;
+    var baseLogicCount = `(r2.invitationStatus = 'accepted' OR (r2.invitationStatus = 'pending' AND (r2.expirationDate IS NULL OR r2.expirationDate > datetime('now'))))`;
+
     var sql = `
         SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, c.total_rows 
         FROM films f, reviews r, 
         (SELECT count(*) total_rows 
          FROM films f2, reviews r2 
          WHERE f2.private=0 AND f2.id = r2.filmId AND r2.reviewerId = ? 
-         AND (r2.invitationStatus = 'accepted' OR (r2.invitationStatus = 'pending' AND (r2.expirationDate IS NULL OR r2.expirationDate > datetime('now'))))
-        ) c 
-        WHERE f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? 
-        AND (r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))
-    `;
-    var limits = serviceUtils.getFilmPagination(pageNo);
-    if (limits.length != 0) sql = sql + " LIMIT ?,?";
-    limits.unshift(userId);
-    limits.unshift(userId);
+         AND ${baseLogicCount}
+         `;
 
-    db.all(sql, limits, (err, rows) => {
+    // Aggiunta filtro nella subquery del count (se presente)
+    var countParams = [userId];
+    if (filterStatus) {
+        sql += " AND r2.invitationStatus = ? ";
+        countParams.push(filterStatus);
+    }
+    
+    sql += `) c 
+        WHERE f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? 
+        AND ${baseLogic}
+    `;
+
+    // Aggiunta filtro nella query principale
+    var params = countParams.concat([userId]);
+    if (filterStatus) {
+        sql += " AND r.invitationStatus = ? ";
+        params.push(filterStatus);
+    }
+
+    var limits = serviceUtils.getFilmPagination(pageNo);
+    if (limits.length != 0) {
+        sql = sql + " LIMIT ?,?";
+        params = params.concat(limits);
+    }
+
+    db.all(sql, params, (err, rows) => {
       if (err) {
         reject(err);
       } else {
@@ -146,12 +164,20 @@ exports.getInvitedFilms = function (userId, pageNo) {
 
 /**
  * Retrieve the number of public films for which the user has received a review invitation
- * ... (No change, logic inside query updated implicitly if reused, but here explicitly)
+ * MODIFICATO: Aggiunto parametro filterStatus
  **/
-exports.getInvitedFilmsTotal = function (reviewerId) {
+exports.getInvitedFilmsTotal = function (reviewerId, filterStatus) {
     return new Promise((resolve, reject) => {
         var sqlNumOfFilms = "SELECT count(*) total FROM films f, reviews r WHERE  f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? AND (r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))";
-        db.get(sqlNumOfFilms, [reviewerId], (err, size) => {
+        
+        var params = [reviewerId];
+        
+        if (filterStatus) {
+            sqlNumOfFilms += " AND r.invitationStatus = ? ";
+            params.push(filterStatus);
+        }
+
+        db.get(sqlNumOfFilms, params, (err, size) => {
             if (err) {
                 reject(err);
             } else {

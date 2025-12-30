@@ -2,14 +2,18 @@
 
 var utils = require('../utils/writer.js');
 const filmService = require('../service/FilmsService.js');
-const reviewService = require('../service/ReviewsService.js'); // Import review service
+const reviewService = require('../service/ReviewsService.js');
 const constants = require('../utils/constants.js');
 
 module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
   var numOfFilms = 0;
   var next = 0;
+  
+  // Recuperiamo il filtro dalla query string (es. ?invitationStatus=pending)
+  var filterStatus = req.query.invitationStatus;
 
-  filmService.getInvitedFilmsTotal(req.user.id)
+  // Passiamo il filtro anche alla funzione che conta i film totali
+  filmService.getInvitedFilmsTotal(req.user.id, filterStatus)
     .then(function (response) {
       numOfFilms = response;
       if (numOfFilms == 0) {
@@ -17,15 +21,25 @@ module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
           totalPages: 1,
           currentPage: 1,
           totalItems: 0,
-          films: [], // corrected to films
+          films: [],
         });
       }
-      filmService.getInvitedFilms(req.user.id, req.query.pageNo)
+      
+      // Passiamo il filtro alla funzione di ricerca
+      filmService.getInvitedFilms(req.user.id, req.query.pageNo, filterStatus)
         .then(function (response) {
           if (req.query.pageNo == null) var pageNo = 1;
           else var pageNo = req.query.pageNo;
+          
           var totalPage = Math.ceil(numOfFilms / constants.ELEMENTS_IN_PAGE);
           next = Number(pageNo) + 1;
+          
+          // Costruzione del link per la pagina successiva mantenendo il filtro
+          let nextLink = "/api/films/public/invited?pageNo=" + next;
+          if(filterStatus) {
+              nextLink += "&invitationStatus=" + filterStatus;
+          }
+
           if (pageNo > totalPage || pageNo < 1) {
             utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
           } else if (pageNo == totalPage) {
@@ -41,7 +55,7 @@ module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
               currentPage: pageNo,
               totalItems: numOfFilms,
               films: response,
-              next: "/api/films/public/invited?pageNo=" + next
+              next: nextLink
             });
           }
         })
