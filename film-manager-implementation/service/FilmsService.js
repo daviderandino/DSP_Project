@@ -395,3 +395,22 @@ exports.updateSinglePrivateFilm = function (film, filmId, owner) {
     });
   });
 }
+
+/**
+ * Assegna automaticamente le recensioni
+ */
+exports.assignReviewBalanced = function () {
+    return new Promise((resolve, reject) => {
+        // 1. Trova i film pubblici che non hanno ancora recensioni (o inviti)
+        // 2. Trova gli utenti disponibili
+        // 3. Assegna i film agli utenti in modo bilanciato
+        // 4. Inserisci i nuovi inviti nella tabella 'reviews'
+        
+        // Esempio logica (da adattare al tuo DB):
+        const sqlCheck = "SELECT ..."; 
+        
+        // Se non hai la logica pronta, per ora ritorna un array vuoto o un errore
+        // resolve([]);
+        reject("Not implemented yet"); 
+    });
+}

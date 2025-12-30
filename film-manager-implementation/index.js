@@ -106,6 +106,8 @@ app.post('/api/users/authenticator', apiUsersAuthenticator.authenticateUser);
 app.delete('/api/users/authenticator/current', isLoggedIn,  apiUsersAuthenticatorCurrent.logoutUser);
 app.get('/api/users/:userId', isLoggedIn, apiUsersUserId.getSingleUser);
 app.get('/api/films/private', isLoggedIn, apiFilmsPrivate.getPrivateFilms);
+app.put('/api/films/public/invited', isLoggedIn, apiFilmsPublicInvited.acceptAllInvitedFilms);
+app.post('/api/films/public/assignments', isLoggedIn, apiFilmsPublicAssignments.assignReviewBalanced);
 
 // Error handlers for validation and authentication errors
 
