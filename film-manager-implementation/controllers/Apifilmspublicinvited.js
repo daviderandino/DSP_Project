@@ -2,6 +2,7 @@
 
 var utils = require('../utils/writer.js');
 const filmService = require('../service/FilmsService.js');
+const reviewService = require('../service/ReviewsService.js'); // Import review service
 const constants = require('../utils/constants.js');
 
 module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
@@ -16,7 +17,7 @@ module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
           totalPages: 1,
           currentPage: 1,
           totalItems: 0,
-          reviews: [],
+          films: [], // corrected to films
         });
       }
       filmService.getInvitedFilms(req.user.id, req.query.pageNo)
@@ -51,7 +52,14 @@ module.exports.getInvitedFilms = function getInvitedFilms(req, res, next) {
     .catch(function (response) {
       utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
     });
+};
 
-
-
+module.exports.acceptAllInvitedFilms = function acceptAllInvitedFilms(req, res, next) {
+    reviewService.acceptAllInvitedFilms(req.user.id)
+    .then(function (response) {
+        utils.writeJson(res, response, 204);
+    })
+    .catch(function (response) {
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+    });
 };

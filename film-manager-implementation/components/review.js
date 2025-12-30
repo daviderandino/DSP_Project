@@ -1,8 +1,13 @@
 class Review{    
-    constructor(filmId, reviewerId, completed, reviewDate, rating, review) {
+    constructor(filmId, reviewerId, completed, reviewDate, rating, review, invitationStatus, expirationDate) {
         this.filmId = filmId;
         this.reviewerId = reviewerId;
         this.completed = completed;
+        
+        if(invitationStatus)
+            this.invitationStatus = invitationStatus;
+        if(expirationDate)
+            this.expirationDate = expirationDate;
 
         if(reviewDate)
             this.reviewDate = reviewDate;
@@ -17,5 +22,3 @@ class Review{
 }
 
 module.exports = Review;
-
-

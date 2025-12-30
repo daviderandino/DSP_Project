@@ -22,7 +22,17 @@ module.exports.getFilmReviews = function getFilmReviews(req, res, next) {
               reviews: [],
             });
       }
-      reviewService.getFilmReviews(req.query.pageNo, req.params.filmId)
+      
+      // Pass owner ID (if available, e.g., optional auth) and query filters
+      var options = {};
+      if(req.user) {
+          options.owner = req.user.id;
+      }
+      if(req.query.invitationStatus) {
+          options.invitationStatus = req.query.invitationStatus;
+      }
+
+      reviewService.getFilmReviews(req.query.pageNo, req.params.filmId, options)
         .then(function (response) {
           if (req.query.pageNo == null) var pageNo = 1;
           else var pageNo = req.query.pageNo;
@@ -43,7 +53,7 @@ module.exports.getFilmReviews = function getFilmReviews(req, res, next) {
               currentPage: pageNo,
               totalItems: numOfReviews,
               reviews: response,
-              next: "/api/films/public/" + req.params.taskId + "?pageNo=" + next
+              next: "/api/films/public/" + req.params.filmId + "/reviews?pageNo=" + next // Fixed taskId -> filmId
             });
           }
         })

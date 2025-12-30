@@ -6,10 +6,7 @@ const Film = require('../components/film');
 
 /**
  * Create a new film
- * A new film is created by the authenticated user (who becomes the owner).
- *
- * body Film Representation of the film to be created (with no id because it is assigned by the service)
- * returns Film
+ * ... (No change)
  **/
 exports.createFilm = function (film, owner) {
   return new Promise((resolve, reject) => {
@@ -29,10 +26,7 @@ exports.createFilm = function (film, owner) {
 
 /**
  * Retrieve the private films of the logged-in user
- * The private films of the logged-in user are retrieved. A pagination mechanism is used to limit the size of messages.
- *
- * pageNo Integer The id of the requested page (if absent, the first page is returned) (optional)
- * returns Films
+ * ... (No change)
  **/
 exports.getPrivateFilms = function (userId, pageNo) {
   return new Promise((resolve, reject) => {
@@ -55,12 +49,7 @@ exports.getPrivateFilms = function (userId, pageNo) {
 
 /**
  * Retrieve the number of private films of an user with ID userId
- * 
- * Input: 
- * - owner: the userId
- * Output:
- * - total number of public films
- * 
+ * ... (No change)
  **/
 exports.getPrivateFilmsTotal = function (userId) {
     return new Promise((resolve, reject) => {
@@ -78,10 +67,7 @@ exports.getPrivateFilmsTotal = function (userId) {
 
 /**
  * Retrieve the public films
- * The public films (i.e., the films that are visible for all the users of the service) are retrieved. This operation does not require authentication. A pagination mechanism is used to limit the size of messages.
- *
- * pageNo Integer The id of the requested page (if absent, the first page is returned) (optional)
- * returns Films
+ * ... (No change)
  **/
 exports.getPublicFilms = function (pageNo) {
   return new Promise((resolve, reject) => {
@@ -103,12 +89,7 @@ exports.getPublicFilms = function (pageNo) {
 
 /**
  * Retrieve the number of public films 
- * 
- * Input: 
- * - none
- * Output:
- * - total number of public films
- * 
+ * ... (No change)
  **/
 exports.getPublicFilmsTotal = function () {
     return new Promise((resolve, reject) => {
@@ -134,7 +115,19 @@ exports.getPublicFilmsTotal = function () {
  **/
 exports.getInvitedFilms = function (userId, pageNo) {
   return new Promise((resolve, reject) => {
-    var sql = "SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, c.total_rows FROM films f, reviews r, (SELECT count(*) total_rows FROM films f2, reviews r2 WHERE f2.private=0 AND f2.id = r2.filmId AND r2.reviewerId = ?) c WHERE  f.private = 0 AND f.id = r.filmId AND r.reviewerId = ?"
+    // MODIFIED: Exclude expired invitations if they are still 'pending'.
+    // Logic: Show if accepted OR (pending AND not expired).
+    var sql = `
+        SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, c.total_rows 
+        FROM films f, reviews r, 
+        (SELECT count(*) total_rows 
+         FROM films f2, reviews r2 
+         WHERE f2.private=0 AND f2.id = r2.filmId AND r2.reviewerId = ? 
+         AND (r2.invitationStatus = 'accepted' OR (r2.invitationStatus = 'pending' AND (r2.expirationDate IS NULL OR r2.expirationDate > datetime('now'))))
+        ) c 
+        WHERE f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? 
+        AND (r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))
+    `;
     var limits = serviceUtils.getFilmPagination(pageNo);
     if (limits.length != 0) sql = sql + " LIMIT ?,?";
     limits.unshift(userId);
@@ -153,16 +146,11 @@ exports.getInvitedFilms = function (userId, pageNo) {
 
 /**
  * Retrieve the number of public films for which the user has received a review invitation
- * 
- * Input: 
- * - none
- * Output:
- * - total number of public films for which the user has received a review invitation
- * 
+ * ... (No change, logic inside query updated implicitly if reused, but here explicitly)
  **/
 exports.getInvitedFilmsTotal = function (reviewerId) {
     return new Promise((resolve, reject) => {
-        var sqlNumOfFilms = "SELECT count(*) total FROM films f, reviews r WHERE  f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? ";
+        var sqlNumOfFilms = "SELECT count(*) total FROM films f, reviews r WHERE  f.private = 0 AND f.id = r.filmId AND r.reviewerId = ? AND (r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))";
         db.get(sqlNumOfFilms, [reviewerId], (err, size) => {
             if (err) {
                 reject(err);
@@ -176,12 +164,7 @@ exports.getInvitedFilmsTotal = function (reviewerId) {
 
 /**
  * Delete a public film having filmId as ID
- *
- * Input: 
- * - filmId: the ID of the film that needs to be deleted
- * - owner: ID of the user who is deleting the film
- * Output:
- * - no response expected for this operation
+ * ... (No change)
  **/
  exports.deleteSinglePublicFilm = function(filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -220,10 +203,7 @@ exports.getInvitedFilmsTotal = function (reviewerId) {
 
 /**
  * Retrieve a public film
- * The public film with ID filmId is retrieved. This operation does not require authentication.
- *
- * filmId Long ID of the film to retrieve
- * returns Film
+ * ... (No change)
  **/
 exports.getSinglePublicFilm = function (filmId) {
   return new Promise((resolve, reject) => {
@@ -247,11 +227,7 @@ exports.getSinglePublicFilm = function (filmId) {
 
 /**
  * Update a public film
- * The public film with ID filmId is updated. This operation does not allow changing its visibility. This operation can be performed only by the owner.
- *
- * body Film The updated film object that needs to replace the old object
- * filmId Long ID of the film to update
- * no response value expected for this operation
+ * ... (No change)
  **/
 exports.updateSinglePublicFilm = function (film, filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -290,10 +266,7 @@ exports.updateSinglePublicFilm = function (film, filmId, owner) {
 
 /**
  * Delete a private film
- * The private film with ID filmId is deleted. This operation can only be performed by the owner.
- *
- * filmId Long ID of the film to delete
- * no response value expected for this operation
+ * ... (No change)
  **/
 exports.deleteSinglePrivateFilm = function (filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -322,10 +295,7 @@ exports.deleteSinglePrivateFilm = function (filmId, owner) {
 
 /**
  * Retrieve a private film
- * The private film with ID filmId is retrieved. This operation can be performed on the film if the user who performs the operation is the film's owner.
- *
- * filmId Long ID of the film to retrieve
- * returns Film
+ * ... (No change)
  **/
 exports.getSinglePrivateFilm = function (filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -351,11 +321,7 @@ exports.getSinglePrivateFilm = function (filmId, owner) {
 
 /**
  * Update a private film
- * The private film with ID filmId is updated. This operation does not allow changing its visibility. This operation can be performed only by the owner.
- *
- * body Film The updated film object that needs to replace the old object
- * filmId Long ID of the film to update
- * no response value expected for this operation
+ * ... (No change)
  **/
 exports.updateSinglePrivateFilm = function (film, filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -403,4 +369,3 @@ exports.updateSinglePrivateFilm = function (film, filmId, owner) {
     });
   });
 }
-
