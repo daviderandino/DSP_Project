@@ -95,10 +95,8 @@ app.get('/api/films/private/:filmId', isLoggedIn, apiFilmsPrivateFilmId.getSingl
 app.put('/api/films/private/:filmId', isLoggedIn, validate({ body: filmSchema }), apiFilmsPrivateFilmId.updateSinglePrivateFilm);
 app.delete('/api/films/private/:filmId', isLoggedIn, apiFilmsPrivateFilmId.deleteSinglePrivateFilm);
 
-// --- SEZIONE MODIFICATA: INVITED PRIMA DI :filmId ---
 app.get('/api/films/public/invited', isLoggedIn, apiFilmsPublicInvited.getInvitedFilms);
 app.put('/api/films/public/invited', isLoggedIn, apiFilmsPublicInvited.acceptAllInvitedFilms);
-// ----------------------------------------------------
 
 app.get('/api/films/public/:filmId', apiFilmsPublicFilmId.getSinglePublicFilm);
 app.put('/api/films/public/:filmId', isLoggedIn, validate({ body: filmSchema }), apiFilmsPublicFilmId.updateSinglePublicFilm);

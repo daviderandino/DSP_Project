@@ -6,7 +6,6 @@ const Film = require('../components/film');
 
 /**
  * Create a new film
- * ... (No change)
  **/
 exports.createFilm = function (film, owner) {
   return new Promise((resolve, reject) => {
@@ -26,7 +25,6 @@ exports.createFilm = function (film, owner) {
 
 /**
  * Retrieve the private films of the logged-in user
- * ... (No change)
  **/
 exports.getPrivateFilms = function (userId, pageNo) {
   return new Promise((resolve, reject) => {
@@ -49,7 +47,6 @@ exports.getPrivateFilms = function (userId, pageNo) {
 
 /**
  * Retrieve the number of private films of an user with ID userId
- * ... (No change)
  **/
 exports.getPrivateFilmsTotal = function (userId) {
     return new Promise((resolve, reject) => {
@@ -67,7 +64,6 @@ exports.getPrivateFilmsTotal = function (userId) {
 
 /**
  * Retrieve the public films
- * ... (No change)
  **/
 exports.getPublicFilms = function (pageNo) {
   return new Promise((resolve, reject) => {
@@ -89,7 +85,6 @@ exports.getPublicFilms = function (pageNo) {
 
 /**
  * Retrieve the number of public films 
- * ... (No change)
  **/
 exports.getPublicFilmsTotal = function () {
     return new Promise((resolve, reject) => {
@@ -108,12 +103,10 @@ exports.getPublicFilmsTotal = function () {
 
 /**
  * Retrieve the public films that the logged-in user has been invited to review
- * MODIFICATO: Aggiunto parametro filterStatus e logica SQL dinamica
  **/
 exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
   return new Promise((resolve, reject) => {
     
-    // Costruiamo la parte base della query che esclude sempre gli scaduti per l'utente invitato
     var baseLogic = `(r.invitationStatus = 'accepted' OR (r.invitationStatus = 'pending' AND (r.expirationDate IS NULL OR r.expirationDate > datetime('now'))))`;
     var baseLogicCount = `(r2.invitationStatus = 'accepted' OR (r2.invitationStatus = 'pending' AND (r2.expirationDate IS NULL OR r2.expirationDate > datetime('now'))))`;
 
@@ -126,7 +119,7 @@ exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
          AND ${baseLogicCount}
          `;
 
-    // Aggiunta filtro nella subquery del count (se presente)
+
     var countParams = [userId];
     if (filterStatus) {
         sql += " AND r2.invitationStatus = ? ";
@@ -138,7 +131,6 @@ exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
         AND ${baseLogic}
     `;
 
-    // Aggiunta filtro nella query principale
     var params = countParams.concat([userId]);
     if (filterStatus) {
         sql += " AND r.invitationStatus = ? ";
@@ -164,7 +156,6 @@ exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
 
 /**
  * Retrieve the number of public films for which the user has received a review invitation
- * MODIFICATO: Aggiunto parametro filterStatus
  **/
 exports.getInvitedFilmsTotal = function (reviewerId, filterStatus) {
     return new Promise((resolve, reject) => {
@@ -190,7 +181,6 @@ exports.getInvitedFilmsTotal = function (reviewerId, filterStatus) {
 
 /**
  * Delete a public film having filmId as ID
- * ... (No change)
  **/
  exports.deleteSinglePublicFilm = function(filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -229,7 +219,6 @@ exports.getInvitedFilmsTotal = function (reviewerId, filterStatus) {
 
 /**
  * Retrieve a public film
- * ... (No change)
  **/
 exports.getSinglePublicFilm = function (filmId) {
   return new Promise((resolve, reject) => {
@@ -253,7 +242,6 @@ exports.getSinglePublicFilm = function (filmId) {
 
 /**
  * Update a public film
- * ... (No change)
  **/
 exports.updateSinglePublicFilm = function (film, filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -292,7 +280,6 @@ exports.updateSinglePublicFilm = function (film, filmId, owner) {
 
 /**
  * Delete a private film
- * ... (No change)
  **/
 exports.deleteSinglePrivateFilm = function (filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -321,7 +308,6 @@ exports.deleteSinglePrivateFilm = function (filmId, owner) {
 
 /**
  * Retrieve a private film
- * ... (No change)
  **/
 exports.getSinglePrivateFilm = function (filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -347,7 +333,6 @@ exports.getSinglePrivateFilm = function (filmId, owner) {
 
 /**
  * Update a private film
- * ... (No change)
  **/
 exports.updateSinglePrivateFilm = function (film, filmId, owner) {
   return new Promise((resolve, reject) => {
@@ -396,21 +381,9 @@ exports.updateSinglePrivateFilm = function (film, filmId, owner) {
   });
 }
 
-/**
- * Assegna automaticamente le recensioni
- */
 exports.assignReviewBalanced = function () {
     return new Promise((resolve, reject) => {
-        // 1. Trova i film pubblici che non hanno ancora recensioni (o inviti)
-        // 2. Trova gli utenti disponibili
-        // 3. Assegna i film agli utenti in modo bilanciato
-        // 4. Inserisci i nuovi inviti nella tabella 'reviews'
-        
-        // Esempio logica (da adattare al tuo DB):
         const sqlCheck = "SELECT ..."; 
-        
-        // Se non hai la logica pronta, per ora ritorna un array vuoto o un errore
-        // resolve([]);
         reject("Not implemented yet"); 
     });
 }

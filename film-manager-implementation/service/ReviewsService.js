@@ -6,7 +6,6 @@ const Review = require('../components/review');
 
 /**
  * Retrieve the list of all the reviews that have been issued/completed for a public film
- * ... (Tu hai già implementato correttamente questa parte nel tuo codice precedente, la lascio com'era nel tuo upload con i commenti di invisibilità)
  **/
 exports.getFilmReviews = function (pageNo, filmId, options) {
   return new Promise((resolve, reject) => {
@@ -62,18 +61,17 @@ exports.getFilmReviews = function (pageNo, filmId, options) {
                     const expDate = row.expirationDate ? new Date(row.expirationDate) : null;
                     const isExpired = expDate && now > expDate;
 
-                    if (isOwner) {
-                        if (review.invitationStatus === 'pending' && isExpired) {
-                            review.invitationStatus = 'cancelled'; 
-                        }
-                        return review;
-                    } else {
-                        // Per i non-owner, nascondiamo se è scaduta o cancellata
-                        if (review.invitationStatus === 'cancelled' || (review.invitationStatus === 'pending' && isExpired)) {
-                            return null;
-                        }
-                        return review;
-                    }
+            if (isOwner) {
+                if (review.invitationStatus === 'pending' && isExpired) {
+                    review.invitationStatus = 'cancelled'; 
+                }
+                return review;
+            } else {
+                // if (review.completed) {
+                //     return review;
+                // }
+                return null;
+            }
                 }).filter(r => r !== null); // Rimozione elementi null
                 resolve(reviews);
             }
@@ -84,7 +82,6 @@ exports.getFilmReviews = function (pageNo, filmId, options) {
 
 /**
 * Retrieve the number of reviews of the film with ID filmId
-* ... (No change)
 * **/
 exports.getFilmReviewsTotal = function (filmId) {
   return new Promise((resolve, reject) => {
@@ -102,7 +99,6 @@ exports.getFilmReviewsTotal = function (filmId) {
 
 /**
  * Issue film review to some users
- * ... (No change from your correct implementation)
  **/
 exports.issueFilmReview = function (invitations, owner) {
   return new Promise((resolve, reject) => {
@@ -184,7 +180,6 @@ const issueSingleReview = function (sql3, filmId, reviewerId, status, expiration
 
 /**
  * Delete a review invitation
- * ... (No change)
  **/
 exports.deleteSingleReview = function (filmId, reviewerId, owner) {
   return new Promise((resolve, reject) => {
@@ -217,7 +212,6 @@ exports.deleteSingleReview = function (filmId, reviewerId, owner) {
 
 /**
  * Retrieve a review that has been issued/completed for a film
- * MODIFICATO: Controllo scadenza per renderlo "invisibile" (NO_REVIEWS)
  **/
 exports.getSingleReview = function (filmId, reviewerId) {
   return new Promise((resolve, reject) => {
@@ -228,15 +222,10 @@ exports.getSingleReview = function (filmId, reviewerId) {
       else if (rows.length === 0)
         reject("NO_REVIEWS");
       else {
-        // Logica di visibilità: Se è scaduta/cancellata, per il pubblico è come se non esistesse.
         const now = new Date();
         const expDate = rows[0].expirationDate ? new Date(rows[0].expirationDate) : null;
         const isExpired = expDate && now > expDate;
         
-        // Nota: questo endpoint è pubblico. Se fossimo l'owner, dovremmo poterla vedere.
-        // Ma non avendo req.user qui (secondo la firma originale), applichiamo la regola restrittiva
-        // (invisibile se scaduta) per sicurezza, oppure si potrebbe lasciare visibile.
-        // La scelta più sicura per l'esame è nasconderla se non valida, visto che l'owner ha la lista dedicata.
         if (rows[0].invitationStatus === 'cancelled' || (rows[0].invitationStatus === 'pending' && isExpired)) {
              reject("NO_REVIEWS");
              return;
@@ -253,7 +242,6 @@ exports.getSingleReview = function (filmId, reviewerId) {
 
 /**
  * Complete a review
- * ... (No change from your implementation)
  **/
 exports.updateSingleReview = function (review, filmId, reviewerId) {
   return new Promise((resolve, reject) => {
@@ -267,7 +255,6 @@ exports.updateSingleReview = function (review, filmId, reviewerId) {
       else if (reviewerId != rows[0].reviewerId) {
         reject("USER_NOT_REVIEWER");
       }
-      // NEW CHECK: Must be accepted to update
       else if (rows[0].invitationStatus !== 'accepted') {
           reject("INVITATION_NOT_ACCEPTED");
       }
@@ -304,7 +291,6 @@ exports.updateSingleReview = function (review, filmId, reviewerId) {
 
 /**
  * Accept all pending invitations for a user
- * ... (No change)
  */
 exports.acceptAllInvitedFilms = function(reviewerId) {
     return new Promise((resolve, reject) => {
