@@ -22,7 +22,10 @@ exports.getFilmReviews = function (pageNo, filmId, options) {
         }
         
         const isOwner = (options && options.owner && options.owner === rows[0].owner);
-
+        if (!isOwner) {
+            reject("USER_NOT_OWNER");
+            return;
+        }
         var sql = "SELECT r.filmId as fid, r.reviewerId as rid, completed, reviewDate, rating, review, invitationStatus, expirationDate, c.total_rows FROM reviews r, (SELECT count(*) total_rows FROM reviews l WHERE l.filmId = ? ";
         
         // Add filtering logic for total count
@@ -61,17 +64,11 @@ exports.getFilmReviews = function (pageNo, filmId, options) {
                     const expDate = row.expirationDate ? new Date(row.expirationDate) : null;
                     const isExpired = expDate && now > expDate;
 
-            if (isOwner) {
-                if (review.invitationStatus === 'pending' && isExpired) {
-                    review.invitationStatus = 'cancelled'; 
-                }
-                return review;
-            } else {
-                // if (review.completed) {
-                //     return review;
-                // }
-                return null;
-            }
+                    if (review.invitationStatus === 'pending' && isExpired) {
+                        review.invitationStatus = 'cancelled'; 
+                    }
+                    return review;
+            
                 }).filter(r => r !== null); // Rimozione elementi null
                 resolve(reviews);
             }
