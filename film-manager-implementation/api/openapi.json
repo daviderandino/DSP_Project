@@ -123,6 +123,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Film"
+              },
+              "example": {
+                 "title": "Pulp Fiction",
+                 "owner": 1,
+                 "private": false,
+                 "watchDate": "2024-10-15",
+                 "rating": 9,
+                 "favorite": true
               }
             }
           },
@@ -427,6 +435,22 @@
               "type": "integer"
             },
             "description": "The id of the requested page (if absent, the first page is returned)"
+          },
+          {
+            "in": "query",
+            "name": "invitationStatus",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "completed",
+                "cancelled",
+                "expired"
+              ]
+            },
+            "description": "Filter by invitation status (e.g. 'pending')"
           }
         ],
         "responses": {
@@ -436,9 +460,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Films"
+                },
+                "example": {
+                  "totalPages": 1,
+                  "currentPage": 1,
+                  "totalItems": 1,
+                  "films": [
+                    {
+                      "id": 2,
+                      "title": "Matrix",
+                      "owner": 1,
+                      "private": false,
+                      "watchDate": "2025-01-10",
+                      "rating": 10,
+                      "favorite": true,
+                      "self": "/api/films/public/2",
+                      "reviews": "/api/films/public/2/reviews"
+                    }
+                  ]
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "api/films/public/invited"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Accept all pending invitations",
+        "description": "The logged-in user accepts all review invitations that are currently in the 'pending' state and have not expired.",
+        "operationId": "acceptAllInvitedFilms",
+        "responses": {
+          "204": {
+            "description": "No Content (All invitations accepted)",
+            "content": {}
           },
           "401": {
             "description": "Unauthorized",
@@ -632,7 +701,7 @@
           }
         ],
         "requestBody": {
-          "description": "the new film reviews, including the users to whom they are issued",
+          "description": "the new film reviews, including the users to whom they are issued and expiration date",
           "content": {
             "application/json": {
               "schema": {
@@ -640,7 +709,14 @@
                 "items": {
                   "$ref": "#/components/schemas/Review"
                 }
-              }
+              },
+              "example": [
+                {
+                  "reviewerId": 2,
+                  "filmId": 1, 
+                  "expirationDate": "2026-03-01T10:00:00Z"
+                }
+              ]
             }
           },
           "required": true
@@ -690,7 +766,7 @@
           "api/films/public/{filmId}/reviews"
         ],
         "summary": "Retrieve the list of all the reviews that have been issued/completed for a public film",
-        "description": "All the reviews that have been issued/completed for the public film with ID filmId are retrieved. A pagination mechanism is used to limit the size of messages. This operation does not require authentication. ",
+        "description": "All the reviews that have been issued/completed for the public film with ID filmId are retrieved. A pagination mechanism is used to limit the size of messages. This operation does not require authentication. If the user is the owner, all invitations (including pending/expired) are returned.",
         "operationId": "getFilmReviews",
         "parameters": [
           {
@@ -711,6 +787,22 @@
               "type": "integer"
             },
             "description": "ID of the requested page (if absent, the first page is returned)'"
+          },
+          {
+            "in": "query",
+            "name": "invitationStatus",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "completed",
+                "cancelled",
+                "expired"
+              ]
+            },
+            "description": "Filter by invitation status (only for the owner)"
           }
         ],
         "responses": {
@@ -720,6 +812,23 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Reviews"
+                },
+                "example": {
+                  "totalPages": 1,
+                  "currentPage": 1,
+                  "totalItems": 1,
+                  "films": [
+                    {
+                      "filmId": 1,
+                      "reviewerId": 2,
+                      "completed": true,
+                      "reviewDate": "2025-11-20",
+                      "rating": 8,
+                      "review": "A very engaging movie.",
+                      "invitationStatus": "completed",
+                      "expirationDate": "2025-12-01T12:00:00Z"
+                    }
+                  ]
                 }
               }
             }
@@ -826,6 +935,14 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Review"
+              },
+              "example": {
+                "filmId": 1,
+                "reviewerId": 2,
+                "completed": true,
+                "reviewDate": "2026-01-20",
+                "rating": 8,
+                "review": "Excellent cinematography, though the plot was a bit slow."
               }
             }
           }
@@ -1064,13 +1181,16 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/User"
+              },
+              "example": {
+                 "email": "user@polito.it",
+                 "password": "psw1234"
               }
             }
           },
           "required": true
         },
-        "responses": {
-          "200": {
+        "responses": {"200": {
             "description": "Successful operation",
             "headers": {
               "Set-Cookie": {
@@ -1084,6 +1204,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/User"
+                },
+                "example": {
+                    "id": 1,
+                    "name": "User",
+                    "email": "user.dsp@polito.it"
                 }
               }
             }
@@ -1116,8 +1241,7 @@
           }
         }
       }
-}
-
+    }
   },
   "components": {
     "schemas": {
@@ -1343,6 +1467,22 @@
             "description": "a textual description of the review",
             "maxLength": 1000
           },
+          "invitationStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "completed",
+              "cancelled",
+              "expired"
+            ],
+            "description": "The current status of the invitation/review."
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time when the invitation expires (if any)."
+          },
           "self": {
             "type": "string",
             "format": "uri"
@@ -1351,7 +1491,17 @@
         "required": [
           "filmId",
           "reviewerId"
-        ]
+        ],
+        "example": {
+            "filmId": 1,
+            "reviewerId": 2,
+            "completed": true,
+            "reviewDate": "2024-11-20",
+            "rating": 8,
+            "review": "A very engaging movie.",
+            "invitationStatus": "completed",
+            "expirationDate": "2024-12-01T12:00:00Z"
+        }
       },
       "Reviews": {
         "description": "schema for Reviews data structures",

@@ -45,7 +45,7 @@ tags:
 - name: api/users/{userId}
   description: the user with ID userId
 paths:
-  "/api":
+  /api:
     get:
       tags:
       - api
@@ -60,11 +60,11 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/FilmManager"
+                $ref: '#/components/schemas/FilmManager'
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films":
+  /api/films:
     post:
       tags:
       - api/films
@@ -80,7 +80,14 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Film"
+              $ref: '#/components/schemas/Film'
+            example:
+              title: Pulp Fiction
+              owner: 1
+              private: false
+              watchDate: '2024-10-15'
+              rating: 9
+              favorite: true
         required: true
       responses:
         '201':
@@ -88,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Film"
+                $ref: '#/components/schemas/Film'
         '400':
           description: Bad Request
           content: {}
@@ -98,7 +105,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/private":
+  /api/films/private:
     get:
       tags:
       - api/films/private
@@ -121,14 +128,14 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Films"
+                $ref: '#/components/schemas/Films'
         '401':
           description: Unauthorized
           content: {}
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/private/{filmId}":
+  /api/films/private/{filmId}:
     get:
       tags:
       - api/films/private/{filmId}
@@ -153,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Film"
+                $ref: '#/components/schemas/Film'
         '401':
           description: Unauthorized
           content: {}
@@ -189,7 +196,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Film"
+              $ref: '#/components/schemas/Film'
         required: true
       responses:
         '204':
@@ -246,7 +253,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public":
+  /api/films/public:
     get:
       tags:
       - api/films/public
@@ -268,11 +275,11 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Films"
+                $ref: '#/components/schemas/Films'
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public/invited":
+  /api/films/public/invited:
     get:
       tags:
       - api/films/public/invited
@@ -295,15 +302,34 @@ paths:
         required: false
         schema:
           type: string
-          enum: [pending, accepted, cancelled, expired]
-        description: Filter by invitation status (e.g. retrieve only pending invitations)
+          enum:
+          - pending
+          - accepted
+          - completed
+          - cancelled
+          - expired
+        description: Filter by invitation status (e.g. 'pending')
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Films"
+                $ref: '#/components/schemas/Films'
+              example:
+                totalPages: 1
+                currentPage: 1
+                totalItems: 1
+                films:
+                - id: 2
+                  title: Matrix
+                  owner: 1
+                  private: false
+                  watchDate: '2025-01-10'
+                  rating: 10
+                  favorite: true
+                  self: /api/films/public/2
+                  reviews: /api/films/public/2/reviews
         '401':
           description: Unauthorized
           content: {}
@@ -315,12 +341,13 @@ paths:
       - api/films/public/invited
       security:
       - cookieAuth: []
-      summary: Accept all pending review invitations
-      description: Accepts all pending invitations for the logged-in user in a single operation.
+      summary: Accept all pending invitations
+      description: The logged-in user accepts all review invitations that are currently
+        in the 'pending' state and have not expired.
       operationId: acceptAllInvitedFilms
       responses:
         '204':
-          description: Successful operation - No Content
+          description: No Content (All invitations accepted)
           content: {}
         '401':
           description: Unauthorized
@@ -328,7 +355,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public/{filmId}":
+  /api/films/public/{filmId}:
     get:
       tags:
       - api/films/public/{filmId}
@@ -350,7 +377,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Film"
+                $ref: '#/components/schemas/Film'
         '404':
           description: Not Found
           content: {}
@@ -380,7 +407,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Film"
+              $ref: '#/components/schemas/Film'
         required: true
       responses:
         '204':
@@ -437,7 +464,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public/{filmId}/reviews":
+  /api/films/public/{filmId}/reviews:
     post:
       tags:
       - api/films/public/{filmId}/reviews
@@ -459,12 +486,17 @@ paths:
           format: int64
       requestBody:
         description: the new film reviews, including the users to whom they are issued
+          and expiration date
         content:
           application/json:
             schema:
               type: array
               items:
-                "$ref": "#/components/schemas/Review"
+                $ref: '#/components/schemas/Review'
+            example:
+            - reviewerId: 2
+              filmId: 1
+              expirationDate: '2026-03-01T10:00:00Z'
         required: true
       responses:
         '201':
@@ -474,7 +506,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/Review"
+                  $ref: '#/components/schemas/Review'
         '400':
           description: Bad Request
           content: {}
@@ -498,9 +530,10 @@ paths:
       - api/films/public/{filmId}/reviews
       summary: Retrieve the list of all the reviews that have been issued/completed
         for a public film
-      description: 'All the reviews that have been issued/completed for the public
+      description: All the reviews that have been issued/completed for the public
         film with ID filmId are retrieved. A pagination mechanism is used to limit
-        the size of messages. This operation does not require authentication. '
+        the size of messages. This operation does not require authentication. If the
+        user is the owner, all invitations (including pending/expired) are returned.
       operationId: getFilmReviews
       parameters:
       - name: filmId
@@ -521,22 +554,40 @@ paths:
         required: false
         schema:
           type: string
-          enum: [pending, accepted, cancelled, expired]
-        description: Filter by invitation status (only for owner)
+          enum:
+          - pending
+          - accepted
+          - completed
+          - cancelled
+          - expired
+        description: Filter by invitation status (only for the owner)
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Reviews"
+                $ref: '#/components/schemas/Reviews'
+              example:
+                totalPages: 1
+                currentPage: 1
+                totalItems: 1
+                films:
+                - filmId: 1
+                  reviewerId: 2
+                  completed: true
+                  reviewDate: '2025-11-20'
+                  rating: 8
+                  review: A very engaging movie.
+                  invitationStatus: completed
+                  expirationDate: '2025-12-01T12:00:00Z'
         '404':
           description: Not Found
           content: {}
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public/{filmId}/reviews/{reviewerId}":
+  /api/films/public/{filmId}/reviews/{reviewerId}:
     get:
       tags:
       - api/films/public/{filmId}/reviews/{reviewerId}
@@ -565,7 +616,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Review"
+                $ref: '#/components/schemas/Review'
         '404':
           description: Not Found
           content: {}
@@ -604,7 +655,14 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Review"
+              $ref: '#/components/schemas/Review'
+            example:
+              filmId: 1
+              reviewerId: 2
+              completed: true
+              reviewDate: '2026-01-20'
+              rating: 8
+              review: Excellent cinematography, though the plot was a bit slow.
       responses:
         '204':
           description: No Content
@@ -620,6 +678,9 @@ paths:
           content: {}
         '404':
           description: Not Found
+          content: {}
+        '409':
+          description: Conflict
           content: {}
         '500':
           description: Internal Server Error
@@ -668,7 +729,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/films/public/assignments":
+  /api/films/public/assignments:
     post:
       tags:
       - api/films/public/assignments
@@ -700,7 +761,7 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  "/api/users":
+  /api/users:
     get:
       tags:
       - api/users
@@ -716,14 +777,14 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Users"
+                $ref: '#/components/schemas/Users'
         '401':
           description: Unauthorized
           content: {}
         '404':
           description: Not Found
           content: {}
-  "/api/users/{userId}":
+  /api/users/{userId}:
     get:
       tags:
       - api/users/{userId}
@@ -747,29 +808,32 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
           content: {}
         '404':
           description: Not Found
           content: {}
-  "/api/users/authenticator":
+  /api/users/authenticator:
     post:
       tags:
       - api/users/authenticator
       summary: Logs a user in
-      description: The user who wants to log in sends the user data to the
-        authenticator which performs the operation. If the request for the login of a new user
-        comes from an already authenticated user, the previous user is first logged out.
+      description: The user who wants to log in sends the user data to the authenticator
+        which performs the operation. If the request for the login of a new user comes
+        from an already authenticated user, the previous user is first logged out.
       operationId: authenticateUser
       requestBody:
-        description: The data of the user who wants to perform log in. The data
-          structure must contain email and password.
+        description: The data of the user who wants to perform log in. The data structure
+          must contain email and password.
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/User"
+              $ref: '#/components/schemas/User'
+            example:
+              email: user@polito.it
+              password: psw1234
         required: true
       responses:
         '200':
@@ -782,25 +846,30 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
+              example:
+                id: 1
+                name: User
+                email: user.dsp@polito.it
+        '400':
+          description: Bad Request
+          content: {}
         '401':
           description: Unauthorized
           content: {}
-  "/api/users/authenticator/current":
+  /api/users/authenticator/current:
     delete:
       tags:
-        - "api/users/authenticator/current"
-      summary: "Logs the current user out"
-      description:
-        Invalidates the current user session.  
-        Removes the authentication cookie if present.
-      operationId: "logoutUser"
+      - api/users/authenticator/current
+      summary: Logs the current user out
+      description: Invalidates the current user session. Removes the authentication
+        cookie if present.
+      operationId: logoutUser
       responses:
-        "204":
-          description: "No Content"
-        "401":
-          description: "Unauthorized"
-
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
 components:
   schemas:
     FilmManager:
@@ -841,7 +910,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        "$schema":
+        $schema:
           type: string
           description: path to the JSON Schema to use for the validation of the JSON
             data structure describing the user
@@ -869,13 +938,13 @@ components:
       description: schema for Users data structures
       type: array
       items:
-        "$ref": "#/components/schemas/User"
+        $ref: '#/components/schemas/User'
     Film:
       description: schema for Film data structures
       type: object
       additionalProperties: false
       properties:
-        "$schema":
+        $schema:
           type: string
           description: path to the JSON Schema to use for the validation of the JSON
             data structure describing the film
@@ -923,7 +992,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        "$schema":
+        $schema:
           type: string
           description: path to the JSON Schema to use for the validation of the JSON
             data structure describing the films
@@ -942,7 +1011,7 @@ components:
         films:
           type: array
           items:
-            "$ref": "#/components/schemas/Film"
+            $ref: '#/components/schemas/Film'
           description: the films of the current page
         next:
           type: string
@@ -954,7 +1023,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        "$schema":
+        $schema:
           type: string
           description: path to the JSON Schema to use for the validation of the JSON
             data structure describing the film
@@ -969,14 +1038,6 @@ components:
           type: boolean
           description: true if the review has been completed, false otherwise
           default: 'false'
-        invitationStatus:
-          type: string
-          enum: [pending, accepted, cancelled, expired]
-          description: The status of the review invitation
-        expirationDate:
-          type: string
-          format: date-time
-          description: The expiration date/time for the invitation to be accepted
         reviewDate:
           type: string
           format: date
@@ -991,18 +1052,40 @@ components:
           type: string
           description: a textual description of the review
           maxLength: 1000
+        invitationStatus:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - completed
+          - cancelled
+          - expired
+          description: The current status of the invitation/review.
+        expirationDate:
+          type: string
+          format: date-time
+          description: The date and time when the invitation expires (if any).
         self:
           type: string
           format: uri
       required:
       - filmId
       - reviewerId
+      example:
+        filmId: 1
+        reviewerId: 2
+        completed: true
+        reviewDate: '2024-11-20'
+        rating: 8
+        review: A very engaging movie.
+        invitationStatus: completed
+        expirationDate: '2024-12-01T12:00:00Z'
     Reviews:
       description: schema for Reviews data structures
       type: object
       additionalProperties: false
       properties:
-        "$schema":
+        $schema:
           type: string
           description: path to the JSON Schema to use for the validation of the JSON
             data structure describing the reviews
@@ -1021,7 +1104,7 @@ components:
         films:
           type: array
           items:
-            "$ref": "#/components/schemas/Review"
+            $ref: '#/components/schemas/Review'
           description: the reviews of the current page
         next:
           type: string
