@@ -201,31 +201,31 @@ const issueSingleReview = function (sql3, filmId, reviewerId, status, expiration
  **/
 exports.deleteSingleReview = function (filmId, reviewerId, owner) {
   return new Promise((resolve, reject) => {
-    const sql1 = "SELECT f.owner, r.completed FROM films f, reviews r WHERE f.id = r.filmId AND f.id = ? AND r.reviewerId = ?";
-    db.all(sql1, [filmId, reviewerId], (err, rows) => {
-      if (err)
+    // Uso JOIN esplicito per chiarezza e db.get perché cerco 1 sola riga
+    const sql1 = "SELECT f.owner, r.completed FROM films f JOIN reviews r ON f.id = r.filmId WHERE f.id = ? AND r.reviewerId = ?";
+    
+    db.get(sql1, [filmId, reviewerId], (err, row) => {
+      if (err) {
         reject(err);
-      else if (rows.length === 0)
-        reject("NO_REVIEWS");
-      else if (owner != rows[0].owner) {
-        reject("USER_NOT_OWNER");
-      }
-      else if (rows[0].completed == 1) {
-        reject("ALREADY_COMPLETED");
-      }
-      else {
+      } else if (!row) {
+        reject("NO_REVIEWS"); // 404
+      } else if (row.owner !== owner) {
+        reject("USER_NOT_OWNER"); // 403
+      } else if (row.completed === 1 || row.completed === true) {
+        reject("ALREADY_COMPLETED"); // 409
+      } else {
         const sql2 = 'DELETE FROM reviews WHERE filmId = ? AND reviewerId = ?';
-        db.run(sql2, [filmId], (err) => {
+        // ERRORE FIXATO QUI SOTTO: Ho aggiunto reviewerId all'array
+        db.run(sql2, [filmId, reviewerId], (err) => {
           if (err)
             reject(err);
           else
             resolve(null);
-        })
+        });
       }
     });
   });
-
-}
+};
 
 
 /**
