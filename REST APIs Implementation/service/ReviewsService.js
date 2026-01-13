@@ -1,7 +1,7 @@
 'use strict';
 const serviceUtils = require('../utils/serviceUtils.js');
-const db = require('../components/db');
-const Review = require('../components/review');
+const db = require('../components/db.js');
+const Review = require('../components/review.js');
 
 
 /**
