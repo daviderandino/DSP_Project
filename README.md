@@ -41,45 +41,186 @@ Start the server
 
 ```bash
 cd film-manager-implementation
-npm install
+node index.js
 ```
 
 # Testing
 
-Swagger UI: Access the documentation at http://localhost:3001/docs.
+The API is available at: http://localhost:3001
+
+Swagger Documentation: http://localhost:3001/docs
 
 # Main Design Choices
 
 To meet the exam specifications while maintaining the architecture of Lab 1, the following design choices were implemented:
 
-### 1. State Management (invitationStatus)
-In Lab 1, a review was simply created and existed. In this extension, the lifecycle of a review was redefined by adding an invitationStatus column to the reviews table.
+### 1. Lazy Evaluation for Expiration
 
-pending: The default state when an owner issues a review. The review content cannot be updated by the user in this state.
+Instead of implementing a server-side timer or a cron job to update the database status to expired or cancelled, the system uses Lazy Evaluation.
 
-accepted: The user has explicitly accepted the invitation (via PUT /api/films/public/invited). Only now can they write the actual review.
+- Logic: The database retains the pending status and the expirationDate.
 
-cancelled: The invitation has expired or been revoked.
+- Implementation: When data is requested (GET), the service compares expirationDate with the current server time (datetime('now')).
 
-expired: Used in logic to identify invitations that passed their deadline.
+    - If now > expirationDate, the invitation is treated as cancelled/expired on the fly.
 
-### 2. Lazy Expiration Strategy
-A key requirement was handling the expirationDate. Instead of implementing an active background process (like a cron job) to constantly check and update the database status to 'expired', a lazy evaluation strategy was chosen:
+    - Benefit: This approach makes the service stateless and lightweight, avoiding complex background process management while strictly satisfying the requirement that expired invitations "automatically become invisible" or cancelled.
 
-Storage: The expiration date is stored as a standard ISO string in the database.
+### 2. Review Lifecycle & State Machine
+The reviews table was extended with an invitationStatus column. The flow is enforced as follows:
 
-Evaluation: The check currentTime > expirationDate happens only when data is read (in ReviewsService.getFilmReviews or getSingleReview).
+- pending: Created by the owner. Visible to the invitee (if not expired).
 
-Behavior: If an invitation is found to be expired during a read operation, the service dynamically treats it as cancelled or hides it, ensuring the user always sees the correct status without the overhead of background synchronization.
+- accepted: set via the "Accept All" operation. Required before writing a review.
 
-### 3. Atomic Bulk Acceptance
-To satisfy the requirement that users must be able to "accept all pending invitations in a single operation," a dedicated endpoint was created (PUT /api/films/public/invited).
+- completed: Set when the user submits the text/rating. Visible to the public.
 
-Implementation: This is handled via a single SQL UPDATE statement in ReviewsService.acceptAllInvitedFilms.
+- cancelled (Virtual): A pending review where the expiration date has passed. Visible only to the owner as historic data.
 
-Benefit: This guarantees atomicity. Either all eligible (pending and not expired) invitations are accepted, or none are, preventing partial data updates in case of failure.
+### 3. Visibility & Privacy Rules
+Strict filtering logic was applied at the SQL/Service level to satisfy the different actor perspectives:
 
-### 4. Data Visibility and Filtering
-Modifications were made to FilmsService.js and ReviewsService.js to strictly enforce visibility rules: for owners, the service logic exposes the full status (pending, accepted, expirationDate) of reviews associated with their films, and filtering is possible.
+- Public/Anonymouse Users: Can only see reviews with completed: true.
 
-Query Optimization: The filtering for "pending" invitations is pushed down to the SQL query level (using WHERE clauses) rather than filtering arrays in JavaScript, optimizing performance for large datasets.
+- Invitees: Can see their own pending invitations only if they are not expired.
+
+- Owners: Have full visibility. They can see pending, accepted, completed, and explicitly query for cancelled (expired) invitations to track user activity.
+
+- Private Films: Invitations are strictly blocked for private films (private: 1). The system enforces the rule that private films are personal diaries and cannot be shared.
+
+### 4. Security & Data Integrity
+Several safeguards were implemented to prevent logic abuse:
+
+- Anti-Spoofing: The API validates that the reviewerId in the URL matches the authenticated req.user.id during review updates. Users cannot complete reviews assigned to others.
+
+- Self-Invite Block: Owners are prevented from issuing review invitations to themselves (to avoid data duplication with the existing rating field in the films table).
+
+- Review Locking: A user cannot submit a review (PUT) unless they have explicitly transitioned the state to accepted first.
+
+- Input Validation: Ratings are strictly validated to be integers between 1 and 10.
+
+### 5. API Design
+- Atomic "Accept All": A specific endpoint (PUT /api/films/public/invited) was created to handle the requirement of accepting all pending invitations in a "single operation".
+
+- Pagination: All new endpoints maintain the pagination standard of the existing project
+
+# Demonstration Flow & Test Scenarios
+
+The database provided with this project (database.db) is pre-populated to demonstrate all functional requirements immediately:
+
+- User1: Owner of a film with filmId1
+
+- User2 (Invitee - Active): Has a pending invitation (valid date) for filmId1.
+
+- User3 (Invitee - Accepted): Has already accepted an invitation for filmId1.
+
+- User4 (Invitee - Expired): Has a pending invitation with a past date for filmId1.
+
+- User5: Has a completed review for filmId1.
+
+![alt text](postman.png)
+
+### Step 1: Public Visibility Check
+
+- Actor: Unauthenticated User (No Login)
+
+- Request: GET (No Auth) Check Review 
+
+- Action: Call the API to retrieve reviews for Film 1.
+
+    - Expected Result: You should only see the review by User 5 (Completed). You must not see pending or expired invitations
+
+### Step 2: Owner Monitoring (Initial)
+- Actor: Owner (User 1)
+
+- Request: POST Login Owner (1) 
+
+- Request: GET Owner Filter Pending 
+
+- Action: Retrieve reviews with ?invitationStatus=pending.
+
+    - Expected Result: You must see User 2 (Active Pending). User 4 is not visibile because is a past invitation
+
+### Step 3: The "Already Accepted" Scenario
+- Actor: User 3
+
+- Request: POST Login3 
+
+- Request: PUT Write Review 
+
+- Action: Attempt to submit the review text and rating.
+
+    - Expected Result: Success. Since the invitation was already in the accepted state in the DB seed, the system allows the update immediately
+
+### Step 4: The "Standard Lifecycle" (Pending -> Accept -> Write)
+- Actor: User 2
+
+- Request: POST Login2 
+
+- Request: GET View pending invitations 
+
+    - Result: The user sees their invitation for Film 1.
+
+- Request: PUT Write Review 
+
+    - Result: Fail. The system blocks the write because the status is still pending.
+
+- Request: PUT Accept All Invites 
+
+    - Result: Success. Status changes to accepted.
+
+- Request: PUT Write Review 
+
+    - Result: Success. Now that the status is accepted, the review is saved.
+
+- Request: GET View pending invitations 
+
+    - Result: Empty List. The invitation is no longer pending.
+
+### Step 5: The "Expired/Lazy Evaluation" Scenario
+- Actor: User 4
+
+- Request: POST Login4 
+
+- Request: GET View pending invitations 
+
+    - Result: Empty List. Even though the DB says "pending", the date is in the past. The system performs Lazy Evaluation and hides it.
+
+- Request: PUT Accept All Invites 
+
+    - Result: No effect. The query excludes expired items.
+
+- Request: PUT Write Review 
+
+    - Result: Fail. The user cannot interact with an expired invitation.
+
+### Step 6: Owner Monitoring (Final)
+- Actor: Owner (User 1)
+
+- Request: POST Login1 
+
+- Request: GET Reviews Check (No filters) 
+
+    - Result: The owner sees the full history, including User4: (Cancelled/Expired) (Visible only to owner).
+
+- Request: GET Owner Filter Pending 
+
+    - Result: Empty. User 2 is now completed, and User 4 is expired.
+
+### Step 7: Privacy Verification
+- Actor: Any Invitee (User 2/3/4/5)
+
+- Request: GET  (No Auth) Check Review of a Film 
+
+- Action: Try to view the general reviews list for Film 1.
+
+    - Expected Result: They see only the completed reviews. They do not see User 4's expired status or other pending data.
+
+### Step 8: Creation
+- Actor: Owner (User 2)
+
+- Request: POST Login Owner (2)
+
+- Request: POST Invite 
+
+    - Result: Create a new tuple in the DB to demonstrate the creation endpoint.
