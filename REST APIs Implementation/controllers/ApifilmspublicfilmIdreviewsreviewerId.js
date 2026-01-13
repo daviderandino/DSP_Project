@@ -68,6 +68,9 @@ module.exports.updateSingleReview = function updateSingleReview (req, res, next)
         else if (response == "INVALID_RATING") {
              utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Rating must be between 1 and 10.' }], }, 400); // 400 Bad Request
         }
+        else if (response == "INVITATION_NOT_ACCEPTED") {
+             utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'You must accept the invitation before reviewing the film.' }], }, 409);
+        }
         else {
             utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
         }
