@@ -244,14 +244,14 @@ exports.getSingleReview = function (filmId, reviewerId, userId) {
         const expDate = rows[0].expirationDate ? new Date(rows[0].expirationDate) : null;
         const isExpired = expDate && now > expDate;
 
-        if (rows[0].invitationStatus !== 'completed' && rows[0].owner !== userId) {
+        if (rows[0].invitationStatus !== 'completed' && rows[0].owner !== userId && rows[0].rid !== userId) {
              reject("NO_REVIEWS");
              return;
         }
 
         var review = serviceUtils.createReview(rows[0]);
 
-        if (rows[0].owner !== userId) {
+        if (rows[0].owner !== userId && rows[0].rid !== userId) {
             delete review.invitationStatus;
             delete review.expirationDate;
         }
