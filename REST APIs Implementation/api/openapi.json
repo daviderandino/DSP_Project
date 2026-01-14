@@ -824,9 +824,7 @@
                       "completed": true,
                       "reviewDate": "2025-11-20",
                       "rating": 8,
-                      "review": "A very engaging movie.",
-                      "invitationStatus": "completed",
-                      "expirationDate": "2025-12-01T12:00:00Z"
+                      "review": "A very engaging movie."
                     }
                   ]
                 }
@@ -1498,9 +1496,7 @@
             "completed": true,
             "reviewDate": "2024-11-20",
             "rating": 8,
-            "review": "A very engaging movie.",
-            "invitationStatus": "completed",
-            "expirationDate": "2024-12-01T12:00:00Z"
+            "review": "A very engaging movie."
         }
       },
       "Reviews": {
