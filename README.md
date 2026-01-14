@@ -204,11 +204,20 @@ The database provided with this project (database.db) is pre-populated to demons
 
     - Expected Result: They see only the completed reviews. They do not see User 4's expired status or other pending data.
 
-### Step 8: Creation
-- Actor: Owner (User 2)
+### Step 8: Invitation and Global Acceptance
+
+- Actor: User 2 and User 1
 
 - Request: POST Login Owner (2)
 
 - Request: POST Invite 
 
     - Result: Create a new tuple in the DB to demonstrate the creation endpoint.
+
+- Request: POST Login Owner (1)
+
+- Requests: POST Invite (themselves)
+
+- Request: PUT Accept All Invites 
+
+    - Result: Both invitations are accepted
