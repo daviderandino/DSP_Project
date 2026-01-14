@@ -111,7 +111,7 @@ exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
     var baseLogicCount = `(r2.invitationStatus = 'accepted' OR (r2.invitationStatus = 'pending' AND (r2.expirationDate IS NULL OR r2.expirationDate > datetime('now'))))`;
 
     var sql = `
-        SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, c.total_rows 
+        SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, r.expirationDate, r.invitationStatus, c.total_rows 
         FROM films f, reviews r, 
         (SELECT count(*) total_rows 
          FROM films f2, reviews r2 
@@ -147,7 +147,12 @@ exports.getInvitedFilms = function (userId, pageNo, filterStatus) {
       if (err) {
         reject(err);
       } else {
-        let films = rows.map((row) => serviceUtils.createFilm(row));
+        let films = rows.map((row) => {
+            let film = serviceUtils.createFilm(row);
+            film.expirationDate = row.expirationDate;     // <--- Aggiunta fondamentale
+            film.invitationStatus = row.invitationStatus; // <--- Utile per il frontend
+            return film;
+        });
         resolve(films);
       }
     });
