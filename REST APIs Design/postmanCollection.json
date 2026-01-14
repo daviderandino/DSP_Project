@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8fa10341-11a2-4a7c-82b0-ccc9be7ee07a",
+		"_postman_id": "0bfdf8ee-fbbe-4208-badc-3b914b9046f6",
 		"name": "Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43057365"
@@ -348,36 +348,6 @@
 						"public",
 						"2",
 						"reviews"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Login invited user",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\" : \"user.dsp@polito.it\",\r\n    \"password\": \"password\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:3001/api/users/authenticator",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3001",
-					"path": [
-						"api",
-						"users",
-						"authenticator"
 					]
 				}
 			},
