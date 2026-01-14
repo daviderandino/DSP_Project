@@ -82,6 +82,12 @@ exports.getFilmReviews = function (pageNo, filmId, options) {
                         if (review.invitationStatus === 'pending' && isExpired) {
                             review.invitationStatus = 'cancelled';
                         }
+
+                        if (!isOwner) {
+                            delete review.invitationStatus;
+                            delete review.expirationDate;
+                        }
+                        
                         return review;
 
                     }).filter(r => r !== null);
@@ -238,8 +244,8 @@ exports.getSingleReview = function (filmId, reviewerId, userId) {
         const expDate = rows[0].expirationDate ? new Date(rows[0].expirationDate) : null;
         const isExpired = expDate && now > expDate;
 
-        if(rows[0].invitationStatus !== 'completed'){
-          reject("NO_REVIEWS");
+        if (rows[0].invitationStatus !== 'completed' && rows[0].owner !== userId) {
+             reject("NO_REVIEWS");
              return;
         }
 

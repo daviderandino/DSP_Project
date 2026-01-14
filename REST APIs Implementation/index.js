@@ -106,7 +106,7 @@ app.get('/api/films/public/:filmId', apiFilmsPublicFilmId.getSinglePublicFilm);
 app.put('/api/films/public/:filmId', isLoggedIn, validate({ body: filmSchema }), apiFilmsPublicFilmId.updateSinglePublicFilm);
 app.delete('/api/films/public/:filmId', isLoggedIn, apiFilmsPublicFilmId.deleteSinglePublicFilm);
 
-app.get('/api/films/public/:filmId/reviews', isLoggedIn, apiFilmsPublicFilmIdReviews.getFilmReviews);
+app.get('/api/films/public/:filmId/reviews', apiFilmsPublicFilmIdReviews.getFilmReviews);
 app.post('/api/films/public/:filmId/reviews', isLoggedIn, validate({ body: reviewListSchema }),apiFilmsPublicFilmIdReviews.issueFilmReview);
 
 app.get('/api/films/public/:filmId/reviews/:reviewerId', apiFilmsPublicFilmIdReviewsReviewerId.getSingleReview);
