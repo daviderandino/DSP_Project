@@ -95,6 +95,9 @@ module.exports.issueFilmReview = function issueFilmReview(req, res, next) {
         else if (response == "NO_FILMS" || response == "PRIVATE_FILM") {
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The public film does not exist.' }], }, 404);
         }
+        else if (response == "EXPIRATION_DATE_INVALID") { 
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Expiration date cannot be in the past.' }], }, 400);
+        }
         else if (response == "REVIEWER_ID_IS_NOT_USER") {
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user with ID reviewerId does not exist.' }], }, 404);
         }

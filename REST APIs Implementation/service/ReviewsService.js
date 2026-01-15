@@ -148,6 +148,10 @@ exports.issueFilmReview = function (invitations, owner) {
           else if (rows.length !== invitations.length){
             reject("REVIEWER_ID_IS_NOT_USER");
           }
+          // CHECK VALIDAZIONE DATA (FIX)
+          else if (invitations.some(i => i.expirationDate && new Date(i.expirationDate) <= new Date())) {
+             reject("EXPIRATION_DATE_INVALID");
+          }
           else {
             const sql3 = 'INSERT INTO reviews(filmId, reviewerId, completed, invitationStatus, expirationDate) VALUES(?,?,0,?,?)';
             var finalResult = [];
