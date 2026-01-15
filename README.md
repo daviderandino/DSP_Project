@@ -145,7 +145,7 @@ The database provided with this project (database.db) is pre-populated to demons
 
 - Request: POST Login2 
 
-- Request: GET View pending invitations 
+- Request: GET View pending invitations (filtering per page is possible: http://localhost:3001/api/films/public/invited?pageNo=1&invitationStatus=pending)
 
     - Result: The user sees their invitation for Film 1.
 
